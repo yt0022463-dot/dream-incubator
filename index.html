@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dream Incubator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg:#0e1116; --card:#141a22; --accent:#4ea1ff; --text:#e6edf3; --muted:#9aa7b0; --success:#33d17a; --warning:#f5a623;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background:var(--bg); color:var(--text); }
+    a { color:var(--accent); text-decoration:none; }
+    header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #1c2531; position:sticky; top:0; background:var(--bg); z-index:10; }
+    .brand { display:flex; align-items:center; gap:10px; }
+    .logo { width:28px; height:28px; border-radius:6px; background:linear-gradient(135deg, #6bc1ff, #1463ff); box-shadow:0 0 12px rgba(78,161,255,.4); }
+    nav { display:flex; gap:16px; }
+    nav button, .cta { background:var(--accent); color:#05122b; border:none; padding:10px 14px; border-radius:8px; font-weight:600; cursor:pointer; }
+    nav button.secondary { background:#223047; color:var(--text); border:1px solid #2b3a4f; }
+    main { max-width:1200px; margin:0 auto; padding:20px; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:20px; }
+    .card { background:var(--card); border:1px solid #1c2531; border-radius:12px; padding:16px; }
+    .card h2, .card h3 { margin:0 0 10px 0; }
+    .muted { color:var(--muted); }
+    .section-title { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+    .badge { display:inline-flex; align-items:center; gap:6px; border:1px solid #2b3a4f; padding:6px 10px; border-radius:100px; font-size:12px; color:var(--muted); }
+    .pill { display:inline-block; padding:6px 10px; background:#1b2432; border:1px solid #2b3a4f; border-radius:100px; font-size:12px; margin-right:6px; }
+    .list { display:flex; flex-direction:column; gap:12px; }
+    .idea-card { border:1px dashed #2b3a4f; padding:12px; border-radius:10px; background:#121822; }
+    .idea-card .title { font-weight:700; margin-bottom:6px; }
+    .idea-meta { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+    .contributors { display:flex; gap:6px; }
+    .avatar { width:26px; height:26px; border-radius:50%; background:#1f2a3a; border:1px solid #2b3a4f; display:flex; align-items:center; justify-content:center; font-size:12px; color:#9fb3c8; }
+    .row { display:flex; gap:12px; }
+    input, select, textarea { width:100%; padding:10px; border-radius:8px; border:1px solid #2b3a4f; background:#0d141d; color:var(--text); }
+    textarea { min-height:80px; }
+    .actions { display:flex; gap:10px; margin-top:10px; }
+    .ghost { background:#0d141d; border:1px solid #2b3a4f; color:var(--text); }
+    .success { background:var(--success); color:#062615; }
+    .warning { background:var(--warning); color:#2d1b02; }
+    footer { padding:30px; text-align:center; color:var(--muted); }
+    /* Dashboard canvas container */
+    .dashboard { position:relative; height:360px; background:#0b1220; border:1px solid #1c2531; border-radius:12px; overflow:hidden; }
+    .legend { position:absolute; right:10px; top:10px; display:flex; flex-direction:column; gap:6px; }
+    .legend .item { display:flex; gap:6px; align-items:center; font-size:12px; color:#b8c3cc; }
+    .legend .dot { width:10px; height:10px; border-radius:50%; }
+    .dot.idea { background:#6bc1ff; }
+    .dot.contributor { background:#33d17a; }
+    .dot.link { background:#f5a623; }
+    @media(max-width:900px) { .grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div>
+        <strong>Dream Incubator</strong><br />
+        <span class="muted" style="font-size:12px">Adopt, refine, and co-own unfinished ideas</span>
+      </div>
+    </div>
+    <nav>
+      <button class="secondary" onclick="showSection('landing')">Home</button>
+      <button class="secondary" onclick="showSection('ideas')">Idea seeds</button>
+      <button class="secondary" onclick="showSection('dashboard')">3D dashboard</button>
+      <button class="secondary" onclick="showSection('profiles')">Profiles</button>
+      <button onclick="openSubmit()">Submit idea</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Landing -->
+    <section id="landing" class="card">
+      <div class="section-title">
+        <h2>Start here</h2>
+        <span class="badge">Transparent co-ownership <span>🔗</span></span>
+        <span class="badge">Collaboration credits <span>⚡</span></span>
+      </div>
+      <p class="muted">
+        Share unfinished ideas, invite collaborators, and earn credits as your project evolves. Ownership is tracked with
+        tokenized shares so everyone is recognized from day one.
+      </p>
+      <div class="actions">
+        <button class="cta" onclick="openSubmit()">Submit an idea</button>
+        <button class="ghost" onclick="showSection('ideas')">Explore ideas</button>
+      </div>
+    </section>
+
+    <div class="grid">
+      <!-- Idea Seeds Board -->
+      <section id="ideas" class="card">
+        <h3>Idea seeds board</h3>
+        <div class="row">
+          <input id="search" placeholder="Search ideas, tags, goals..." oninput="renderIdeas()" />
+          <select id="sort" onchange="renderIdeas()">
+            <option value="recent">Recent</option>
+            <option value="credits">Credits</option>
+            <option value="contributors">Contributors</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button class="ghost" onclick="openSubmit()">Add idea</button>
+          <button class="ghost" onclick="seedDemo()">Load demo</button>
+        </div>
+        <div id="ideasList" class="list" aria-live="polite"></div>
+      </section>
+
+      <!-- Collaboration Credits and Ownership -->
+      <section id="credits" class="card">
+        <h3>Collaboration credits & blockchain ownership</h3>
+        <p class="muted">Track who contributed, what changed, and how ownership shares evolve.</p>
+        <div id="creditPanel" class="list"></div>
+      </section>
+
+      <!-- 3D Dashboard -->
+      <section id="dashboard" class="card">
+        <h3>3D idea evolution dashboard</h3>
+        <p class="muted">Visual orbit showing ideas, contributors, and contribution links over time.</p>
+        <div class="dashboard">
+          <canvas id="orbitCanvas" width="1200" height="360" role="img" aria-label="Idea evolution visualization"></canvas>
+          <div class="legend">
+            <div class="item"><span class="dot idea"></span>Idea node</div>
+            <div class="item"><span class="dot contributor"></span>Contributor</div>
+            <div class="item"><span class="dot link"></span>Contribution link</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="ghost" onclick="tick()">Advance time</button>
+          <button class="ghost" onclick="randomContribution()">Random contribution</button>
+          <button class="ghost" onclick="resetDashboard()">Reset</button>
+        </div>
+      </section>
+
+      <!-- Profiles -->
+      <section id="profiles" class="card">
+        <h3>Global profiles</h3>
+        <p class="muted">Discover collaborators by skills, location, and contribution history.</p>
+        <div id="profilesList" class="list"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Submit Idea Modal -->
+  <div id="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter: blur(2px); align-items:center; justify-content:center;">
+    <div class="card" style="width:680px; max-width:92vw;">
+      <h3>Submit a new idea</h3>
+      <div class="row">
+        <input id="mTitle" placeholder="Title (e.g., Zero-Waste Quality Chain)" />
+        <input id="mOwner" placeholder="Your name (e.g., Yash)" />
+      </div>
+      <div class="row">
+        <input id="mLocation" placeholder="Location (e.g., Bengaluru, India)" />
+        <input id="mSkills" placeholder="Skills (comma-separated: finance, QC, design)" />
+      </div>
+      <textarea id="mDesc" placeholder="Describe the problem and your spark in 2–4 sentences"></textarea>
+      <input id="mTags" placeholder="Tags (comma-separated: sustainability, blockchain, manufacturing)" />
+      <div class="actions">
+        <button class="cta" onclick="submitIdea()">Publish idea</button>
+        <button class="ghost" onclick="closeSubmit()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Dream Incubator • v0.1 prototype • Built for rapid exploration and credit-first collaboration
+  </footer>
+
+  <script>
+    // Demo state
+    const state = {
+      ideas: [],
+      profiles: [],
+      time: 0, // dashboard time
+    };
+
+    // Utilities
+    const uid = () => Math.random().toString(36).slice(2,9);
+
+    // Section navigation
+    function showSection(id) {
+      for (const sec of document.querySelectorAll('section.card')) {
+        sec.style.display = (sec.id === id || sec.id === 'ideas' || sec.id === 'credits') ? 'block' : (sec.id === 'landing' ? 'block' : 'none');
+      }
+      // Always render panels that depend on state
+      renderIdeas();
+      renderCredits();
+      renderProfiles();
+      drawOrbit();
+    }
+
+    // Modal controls
+    function openSubmit() { document.getElementById('modal').style.display = 'flex'; }
+    function closeSubmit() { document.getElementById('modal').style.display = 'none'; }
+
+    // Submit idea
+    function submitIdea() {
+      const title = mTitle.value.trim();
+      const desc = mDesc.value.trim();
+      const tags = mTags.value.split(',').map(t => t.trim()).filter(Boolean);
+      const owner = mOwner.value.trim() || 'Anonymous';
+      const location = mLocation.value.trim() || 'Global';
+      const skills = mSkills.value.split(',').map(s => s.trim()).filter(Boolean);
+
+      if (!title || !desc) return alert('Please add a title and description.');
+      const id = uid();
+      const ownerProfile = getOrCreateProfile(owner, location, skills);
+
+      state.ideas.unshift({
+        id, title, desc, tags,
+        createdAt: Date.now(),
+        contributors: [{ name: owner, credits: 1 }],
+        ownership: [{ name: owner, shares: 100 }],
+        log: [{ type: 'create', by: owner, at: Date.now(), note: 'Idea published' }],
+      });
+
+      closeSubmit();
+      clearModal();
+      renderIdeas();
+      renderCredits();
+      drawOrbit();
+      alert('Idea published! Invite collaborators to grow credits and co-ownership.');
+    }
+
+    function clearModal() {
+      mTitle.value = '';
+      mDesc.value = '';
+      mTags.value = '';
+      mOwner.value = '';
+      mLocation.value = '';
+      mSkills.value = '';
+    }
+
+    function getOrCreateProfile(name, location, skills) {
+      let p = state.profiles.find(x => x.name === name);
+      if (!p) {
+        p = { id: uid(), name, location, skills, history: [] };
+        state.profiles.push(p);
+      } else {
+        // merge skills
+        p.skills = Array.from(new Set([...(p.skills||[]), ...skills]));
+        if (location) p.location = location;
+      }
+      return p;
+    }
+
+    // Render Idea Seeds
+    function renderIdeas() {
+      const list = document.getElementById('ideasList');
+      if (!list) return;
+      const q = (document.getElementById('search')?.value || '').toLowerCase();
+      const sort = document.getElementById('sort')?.value || 'recent';
+
+      let ideas = [...state.ideas];
+      if (q) {
+        ideas = ideas.filter(i =>
+          i.title.toLowerCase().includes(q) ||
+          i.desc.toLowerCase().includes(q) ||
+          i.tags.some(t => t.toLowerCase().includes(q))
+        );
+      }
+      ideas.sort((a,b) => {
+        if (sort === 'recent') return b.createdAt - a.createdAt;
+        if (sort === 'credits') return sumCredits(b) - sumCredits(a);
+        if (sort === 'contributors') return b.contributors.length - a.contributors.length;
+        return 0;
+      });
+
+      list.innerHTML = '';
+      if (!ideas.length) list.innerHTML = '<div class="muted">No ideas yet. Be the first to submit.</div>';
+
+      for (const i of ideas) {
+        const div = document.createElement('div');
+        div.className = 'idea-card';
+        div.innerHTML = `
+          <div class="title">${i.title}</div>
+          <div class="muted">${i.desc}</div>
+          <div class="idea-meta">
+            ${i.tags.map(t => `<span class="pill">#${t}</span>`).join('')}
+            <span class="pill">credits: ${sumCredits(i)}</span>
+            <span class="pill">contributors: ${i.contributors.length}</span>
+          </div>
+          <div class="contributors">
+            ${i.contributors.slice(0,8).map(c => `<div class="avatar" title="${c.name}">${c.name.slice(0,2).toUpperCase()}</div>`).join('')}
+          </div>
+          <div class="actions">
+            <button class="ghost" onclick="addContribution('${i.id}')">Contribute</button>
+            <button class="ghost" onclick="addCollaborator('${i.id}')">Add collaborator</button>
+            <button class="ghost" onclick="tokenize('${i.id}')">Tokenize ownership</button>
+          </div>
+        `;
+        list.appendChild(div);
+      }
+    }
+
+    function sumCredits(i) { return i.contributors.reduce((s,c) => s + (c.credits||0), 0); }
+
+    // Contributions and collaborators
+    function addContribution(id) {
+      const idea = state.ideas.find(x => x.id === id);
+      if (!idea) return;
+      const name = prompt('Your name for credits?');
+      if (!name) return;
+      const note = prompt('Describe your contribution (comment, doc link stub, task change):') || 'Contribution';
+      const profile = getOrCreateProfile(name, '', []);
+      idea.log.push({ type:'contrib', by:name, at:Date.now(), note });
+      const existing = idea.contributors.find(c => c.name === name);
+      if (existing) existing.credits += 1; else idea.contributors.push({ name, credits:1 });
+
+      // Ownership nudges (demo): convert credits to proportional shares if tokenized
+      if (idea.token) {
+        const totalCredits = sumCredits(idea);
+        idea.ownership = idea.contributors.map(c => ({ name:c.name, shares: Math.round((c.credits/totalCredits)*100) }));
+      }
+
+      profile.history.push({ ideaId:id, title:idea.title, type:'contrib', note, at:Date.now() });
+      renderIdeas(); renderCredits(); drawOrbit(); renderProfiles();
+    }
+
+    function addCollaborator(id) {
+      const idea = state.ideas.find(x => x.id === id);
+      if (!idea) return;
+      const name = prompt('Collaborator name to invite?');
+      const location = prompt('Location? (optional)');
+      const skillsStr = prompt('Skills? (comma-separated)');
+      if (!name) return;
+      const skills = (skillsStr||'').split(',').map(s=>s.trim()).filter(Boolean);
+      getOrCreateProfile(name, location||'', skills);
+      const existing = idea.contributors.find(c => c.name === name);
+      if (existing) existing.credits += 1; else idea.contributors.push({ name, credits:1 });
+      idea.log.push({ type:'invite', by:name, at:Date.now(), note:'Invited as collaborator' });
+      renderIdeas(); renderCredits(); drawOrbit(); renderProfiles();
+    }
+
+    function tokenize(id) {
+      const idea = state.ideas.find(x => x.id === id);
+      if (!idea) return;
+      idea.token = { id: 'DI-' + uid(), chain:'DemoChain', createdAt: Date.now() };
+      // initial shares proportional to credits
+      const totalCredits = sumCredits(idea);
+      idea.ownership = idea.contributors.map(c => ({ name:c.name, shares: Math.round((c.credits/totalCredits)*100) }));
+      idea.log.push({ type:'token', by:'system', at:Date.now(), note:'Ownership token minted' });
+      alert(`Token minted: ${idea.token.id} on ${idea.token.chain}`);
+      renderCredits(); renderIdeas();
+    }
+
+    // Render credits & ownership panel
+    function renderCredits() {
+      const panel = document.getElementById('creditPanel');
+      panel.innerHTML = '';
+      if (!state.ideas.length) {
+        panel.innerHTML = '<div class="muted">No activity yet. Contributions, invites, and tokenization will appear here.</div>';
+        return;
+      }
+      for (const i of state.ideas.slice(0,5)) {
+        const div = document.createElement('div');
+        const tokenBadge = i.token ? `<span class="badge">Token: ${i.token.id} 🔗</span>` : `<span class="badge">Not tokenized</span>`;
+        div.className = 'idea-card';
+        div.innerHTML = `
+          <div class="title">${i.title}</div>
+          <div class="muted">${tokenBadge}</div>
+          <div style="margin-top:8px;">
+            <strong>Contributors</strong>
+            <div class="contributors" style="margin-top:6px;">
+              ${i.contributors.map(c => `
+                <div class="avatar" title="${c.name}">${c.name.slice(0,2).toUpperCase()}</div>
+              `).join('')}
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <strong>Collaboration credits</strong>
+            <div class="idea-meta" style="margin-top:6px;">
+              ${i.contributors.map(c => `<span class="pill">${c.name}: ${c.credits}</span>`).join('')}
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <strong>Tokenized shares</strong>
+            <div class="idea-meta" style="margin-top:6px;">
+              ${(i.ownership||[]).map(o => `<span class="pill">🔗 ${o.name}: ${o.shares}%</span>`).join('') || '<span class="pill">Mint a token to assign shares</span>'}
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <strong>Activity log</strong>
+            <div class="list" style="margin-top:6px;">
+              ${i.log.slice(-5).map(l => `<div class="muted">• ${new Date(l.at).toLocaleString()} — ${l.type} by ${l.by} (${l.note})</div>`).join('')}
+            </div>
+          </div>
+        `;
+        panel.appendChild(div);
+      }
+    }
+
+    // Profiles
+    function renderProfiles() {
+      const list = document.getElementById('profilesList');
+      if (!list) return;
+      list.innerHTML = '';
+      if (!state.profiles.length) {
+        list.innerHTML = '<div class="muted">No profiles yet. Collaborators appear here.</div>';
+        return;
+      }
+      for (const p of state.profiles.slice(0,10)) {
+        const div = document.createElement('div');
+        div.className = 'idea-card';
+        div.innerHTML = `
+          <div class="title">${p.name}</div>
+          <div class="idea-meta">
+            <span class="pill">📍 ${p.location||'Global'}</span>
+            ${(p.skills||[]).map(s => `<span class="pill">${s}</span>`).join('')}
+          </div>
+          <div style="margin-top:10px;"><strong>Contribution history</strong></div>
+          <div class="list" style="margin-top:6px;">
+            ${(p.history||[]).slice(-5).map(h => `<div class="muted">• ${new Date(h.at).toLocaleDateString()} — ${h.type} on "${h.title}" (${h.note})</div>`).join('') || '<div class="muted">No contributions yet</div>'}
+          </div>
+        `;
+        list.appendChild(div);
+      }
+    }
+
+    // Dashboard visualization
+    const ctx = () => document.getElementById('orbitCanvas')?.getContext('2d');
+
+    function drawOrbit() {
+      const canvas = document.getElementById('orbitCanvas');
+      if (!canvas) return;
+      const c = ctx();
+      c.clearRect(0,0,canvas.width,canvas.height);
+
+      const centerY = canvas.height/2;
+      const lanes = Math.max(1, state.ideas.length);
+      const laneHeight = (canvas.height - 40) / lanes;
+
+      let lane = 0;
+      for (const idea of state.ideas.slice(0,6)) {
+        const y = 20 + lane*laneHeight + laneHeight/2;
+        // orbit path
+        c.strokeStyle = '#223047'; c.lineWidth = 1.2;
+        c.beginPath(); c.arc(120 + lane*30, y, 180, 0, Math.PI*2); c.stroke();
+
+        // idea node
+        const xIdea = 120 + lane*30 + Math.sin(state.time/20 + lane)*180;
+        c.fillStyle = '#6bc1ff';
+        c.beginPath(); c.arc(xIdea, y, 8, 0, Math.PI*2); c.fill();
+        c.fillStyle = '#b8c3cc'; c.font = '12px system-ui'; c.fillText(idea.title.slice(0,24), xIdea+12, y-10);
+
+        // contributors
+        let idx = 0;
+        for (const ct of idea.contributors.slice(0,8)) {
+          const angle = (state.time/25 + idx) % (Math.PI*2);
+          const radius = 60 + (idx*8);
+          const xC = xIdea + Math.cos(angle)*radius;
+          const yC = y + Math.sin(angle)*radius;
+          c.fillStyle = '#33d17a';
+          c.beginPath(); c.arc(xC, yC, 6, 0, Math.PI*2); c.fill();
+          // link
+          c.strokeStyle = '#f5a623';
+          c.beginPath(); c.moveTo(xIdea, y); c.lineTo(xC, yC); c.stroke();
+          c.fillStyle = '#9fb3c8';
+          c.fillText(ct.name.slice(0,10), xC+8, yC);
+          idx++;
+        }
+        lane++;
+      }
+    }
+
+    function tick() { state.time += 8; drawOrbit(); }
+    function randomContribution() {
+      if (!state.ideas.length) return;
+      const idea = state.ideas[Math.floor(Math.random()*state.ideas.length)];
+      const contributors = state.profiles.length ? state.profiles : [{name:'Guest'}];
+      const person = contributors[Math.floor(Math.random()*contributors.length)].name || 'Guest';
+      const profile = getOrCreateProfile(person, '', []);
+      const note = ['Design update','Market research','Prototype link','QA checklist','Pitch edit'][Math.floor(Math.random()*5)];
+      idea.log.push({ type:'contrib', by:person, at:Date.now(), note });
+      const existing = idea.contributors.find(c => c.name === person);
+      if (existing) existing.credits += 1; else idea.contributors.push({ name:person, credits:1 });
+
+      if (idea.token) {
+        const totalCredits = sumCredits(idea);
+        idea.ownership = idea.contributors.map(c => ({ name:c.name, shares: Math.round((c.credits/totalCredits)*100) }));
+      }
+      profile.history.push({ ideaId:idea.id, title:idea.title, type:'contrib', note, at:Date.now() });
+      state.time += 6;
+      renderIdeas(); renderCredits(); renderProfiles(); drawOrbit();
+    }
+    function resetDashboard() { state.time = 0; drawOrbit(); }
+
+    // Demo data
+    function seedDemo() {
+      state.ideas = [];
+      state.profiles = [];
+      const demoProfiles = [
+        { name:'Yash', location:'Bengaluru, India', skills:['finance','quality','visuals'] },
+        { name:'Asha', location:'Pune, India', skills:['UX','3D','branding'] },
+        { name:'Ravi', location:'Delhi, India', skills:['blockchain','javascript'] },
+        { name:'Maya', location:'Mumbai, India', skills:['ops','sustainability'] }
+      ];
+      demoProfiles.forEach(p => getOrCreateProfile(p.name, p.location, p.skills));
+      const addIdea = (title, desc, tags, owner) => {
+        const id = uid(); const createdAt = Date.now();
+        state.ideas.push({
+          id, title, desc, tags, createdAt,
+          contributors: [{ name:owner, credits:2 }, { name:'Asha', credits:1 }],
+          ownership: [{ name:owner, shares:70 }, { name:'Asha', shares:30 }],
+          log: [{ type:'create', by:owner, at:createdAt, note:'Seed idea' }, { type:'contrib', by:'Asha', at:createdAt+1000, note:'Wireframe v0' }],
+          token: { id:'DI-'+uid(), chain:'DemoChain', createdAt }
+        });
+      };
+      addIdea('Zero-Waste Quality Chain', 'Redirect rejected products to secondary uses via automated quality gates.', ['sustainability','manufacturing','QC'], 'Yash');
+      addIdea('Emotion-Driven Investment', 'Blend sentiment and fundamentals for better risk signals.', ['finance','ML','sentiment'], 'Ravi');
+      addIdea('Collaborative Credit Art', 'Visualize every contributor’s role inside the artifact.', ['design','visuals','community'], 'Asha');
+
+      renderIdeas(); renderCredits(); renderProfiles(); drawOrbit();
+      alert('Demo loaded. Explore ideas, add contributions, and watch ownership update.');
+    }
+
+    // Initial render
+    showSection('landing');
+  </script>
+</body>
+</html>
